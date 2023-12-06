@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRtistic</title>
+    <link rel="stylesheet" href="styles2.css">
+    <link rel="icon" href="icono.ico" type="image/x-icon">
+</head>
+<body>
+    <h1><img id="titulo" src="titulo.png"></h1>
+
+    <div id="contenedor">
+    <div id="ob1">
+        <div id="instrucciones">
+            <label>Sigue estos pasos para generar tu código QR:</label>
+            <br>
+            <label>1.- Ingresa el texto o URL que quieras codificar.</label>
+            <label>2.- Ajusta el nivel de opacidad que tendrá tu código QR.</label>
+            <label>3.- Elije la imagen que quieres combinar con el código QR.</label>
+            <label>4.- Da click en generar "Generar código QR".</label>
+            <label>5.- Si lo deseas puedes descargar tu código QR.</label>
+        </div>
+    </div>
+    <br>
+    <!-- Sección de entrada para el contenido del código QR -->
+    <div id="ob2">
+    <div id="input-section">
+        <label for="qr-data">Ingresa el contenido  para el código QR:</label>
+        <input type="text" id="qr-data" placeholder="Texto o URL" oninput="updateQRPreview()">
+
+        <div>
+            <label>Previsualización del código QR:</label>
+            <img id="qr-preview" alt=<img src="img/icono.ico">
+            <br>
+            <label id="opacity-label" for="qr-opacity">Ajusta la opacidad del código QR (0.6 <-> 0.8):</label>
+            <input type="range" id="qr-opacity" min="0.6" max="0.8" step="0.1" value="0.6" oninput="updateQRPreview()">
+        </div>
+    </div>
+    <br>
+    <br>
+
+    <!-- Sección de previsualización de la imagen -->
+    <div id="preview-image">
+        <label for="image-upload">Selecciona una imagen de fondo:</label>
+        <input type="file" id="image-upload" onchange="previewImage()">
+
+        <label>Previsualización de la imagen:</label>
+        <img id="image-preview" alt=<img src="img/icono.ico">
+    </div>
+    <br>
+    <br>
+
+    <!-- Contenedor para el código QR y la imagen -->
+    <div id="output-section">
+
+        <!-- Sección de código QR generado con imagen de fondo -->
+            <!-- Botón para generar el código QR personalizado -->
+            <span><button id="generate-link" onclick="generateCustomQR()">Generar código QR ⬇️</button></span>
+        <div>
+            <label>Código QR con imagen de fondo:</label>
+            <canvas id="custom-qr" alt="Código QR Personalizado"></canvas>
+        </div>
+    </div>
+    <div id="download-section">
+
+    <!-- Enlace de descarga -->
+    <label>Nombre de archivo: <br><br><input type="text" id="download" onchange="generateCustomQR()"></label>
+    <span><a id="download-link" download="custom_qr.png" href="#">Descargar</a></span>
+
+    </div>
+    <br>
+    <br>
+    </div>
+    </div>
+
+    <!-- Bibliotecas necesarias -->
+    <script src="https://cdn.jsdelivr.net/npm/qrious"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js"></script>
+    <script>
+        // Función para actualizar la previsualización del código QR
+        function updateQRPreview() {
+            const qrData = document.getElementById("qr-data").value;
+            const qrPreview = document.getElementById("qr-preview");
+
+            const qr = new QRious({
+                value: qrData,
+                size: 300
+            });
+
+            qrPreview.src = qr.toDataURL("image/png");
+        }
+
+        // Función para previsualizar la imagen seleccionada
+        function previewImage() {
+            const imageInput = document.getElementById("image-upload");
+            const imagePreview = document.getElementById("image-preview");
+
+            if (imageInput.files.length > 0) {
+                const customImage = imageInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                };
+
+                reader.readAsDataURL(customImage);
+            } else {
+                imagePreview.src = "";
+            }
+
+            // Actualizar la previsualización del código QR
+            updateQRPreview();
+        }
+
+        // Función para generar el código QR personalizado
+        function generateCustomQR() {
+            const qrData = document.getElementById("qr-data").value;
+            const imageInput = document.getElementById("image-upload");
+            const customQRCanvas = document.getElementById("custom-qr");
+            const downloadLink = document.getElementById("download-link");
+
+            if (qrData && imageInput.files.length > 0) {
+                const customImage = imageInput.files[0];
+                const qr = new QRious({
+                    value: qrData,
+                    size: 300
+                });
+
+                customQRCanvas.width = qr.size;
+                customQRCanvas.height = qr.size;
+                const context = customQRCanvas.getContext('2d');
+                context.clearRect(0, 0, qr.size, qr.size);
+
+                // Aplicar la opacidad a la imagen y el código QR (valores constantes)
+                const imageOpacity = 1;
+                const qrOpacity = document.getElementById("qr-opacity").value;
+                context.globalAlpha = imageOpacity;
+                const img = new Image();
+                img.onload = function() {
+                    context.drawImage(img, 0, 0, qr.size, qr.size);
+                    context.globalAlpha = qrOpacity;
+                    context.drawImage(qr.canvas, 0, 0);
+                    context.globalAlpha = 1;
+
+                    // Mostrar el enlace de descarga una vez generada la imagen
+                    downloadLink.style.display = "block";
+                    // Configurar el enlace con la imagen generada
+                    downloadLink.href = customQRCanvas.toDataURL("image/png");
+                    // Asignar el nuevo nombre al enlace de descarga
+                    const nameDownload = document.getElementById("download").value;
+                    downloadLink.download = nameDownload //+ ".png";//"QRtistic.png";
+                };
+                img.src = URL.createObjectURL(customImage);
+            } else {
+                alert("Por favor, ingresa un contenido, selecciona una imagen de fondo o proporciona un texto.");
+            }
+        }
+    </script>
+</body>
+</html>
