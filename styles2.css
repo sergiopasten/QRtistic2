@@ -33,6 +33,8 @@ h1 {
     justify-content: space-around;
     align-items: stretch;
     flex-wrap: wrap;
+    max-width: 90%;
+    min-width: 90%;
 }
 
 #ob2 {
